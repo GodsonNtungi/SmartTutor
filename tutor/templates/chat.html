@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block style %}
+    <title>Chat</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.1/dist/purify.min.js"></script>
+{% endblock %}
+
+{% block content %}
+    <main>
+      <div id="chat-window">
+        <div id="chat-log">
+          <!-- Chat messages will be inserted here -->
+        </div>
+      </div>
+    </main>
+
+    <div id="chat-form">
+      <input type="text" placeholder="Enter your message" id="message-input">
+          <button type="submit" id="send-button">Send</button>
+        <div class="wrap_loader">
+{#             <div id="loader"> </div>#}
+        </div>
+
+
+
+        </div>
+   <script>
+       const chatLog = document.getElementById("chat-log");
+const messageInput = document.getElementById("message-input");
+const sendButton = document.getElementById("send-button");
+const markdownParser = new window.markdownit();
+const purify = DOMPurify.sanitize;
+const loader = document.getElementById('loader');
+
+
+
+
+
+async function addMessage(message, sender) {
+
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message");
+    if (sender === "user") {
+        messageElement.classList.add("user-message");
+        messageElement.innerHTML += "<strong> Student</strong><br>";
+    } else {
+        message = markdownParser.render(message);
+        messageElement.classList.add("bot-message");
+        messageElement.innerHTML += "<strong> Tutor</strong><br>";
+
+    }
+
+    chatLog.appendChild(messageElement);
+
+    // Split the message into words
+    const words = message.split(" ");
+    let i = 0;
+    
+    messageElement.innerHTML += "|";
+
+    // Use setInterval to add each word with a delay between them
+    const interval = setInterval(() => {
+        if (i < words.length) {
+            messageElement.innerHTML = messageElement.innerHTML.slice(0, messageElement.innerHTML.length - 1);
+            chatLog.scrollTop = chatLog.scrollHeight;
+            messageElement.innerHTML += words[i] + " ";
+            messageElement.innerHTML += "|"
+
+            i++;
+        } else {
+            messageElement.innerHTML = messageElement.innerHTML.slice(0, messageElement.innerHTML.length - 1);
+            clearInterval(interval);
+        }
+    }, 60);
+}
+
+
+function sendMessage() {
+  const message = messageInput.value;
+  if (message) {
+    addMessage(message, "user");
+    messageInput.value = "";
+
+   console.log("block");
+    //addMessage("**Tutor** <br>"+"The first library, pandas, provides tools for working with structured data, while the second library, numpy, provides powerful numerical computing tools. The third library, matplotlib, allows us to create visualizations of our data, and the fourth library, datetime, provides functions for working with dates and times. Lastly, we are importing specific functions from the scikit-learn library, including train_test_split for splitting our data into training and testing sets, mean_squared_error for evaluating the performance of our model, LinearRegression for fitting a linear regression model, and StandardScaler for standardizing our data. By importing these libraries, we have access to a range of useful tools and functions that will help us in our programming task.")
+    fetch("{% url 'chat' %}", {
+      method: "POST",
+          headers: {
+    'Content-Type': 'application/json'
+  },
+      body: JSON.stringify({ "message": message }),
+    })
+      .then((response) => response.json())
+      .then((data) => addMessage( data.message,"bot"));
+
+
+
+  }
+
+
+
+}
+
+
+
+sendButton.addEventListener("click", sendMessage);
+messageInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    sendMessage();
+  }
+});
+
+   </script>
+
+ {% endblock %}

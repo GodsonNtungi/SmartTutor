@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+  {% block style %}
+    <title>Multiple File Uploader</title>
+   <link rel="stylesheet" type="text/css" href="{% static 'style2.css' %}">
+  {% endblock %}
+
+{% block content %}
+    <br/>
+    <h1>Multiple File Uploader</h1>
+
+    <div class="container">
+        <form method="post" enctype="multipart/form-data">
+           {% csrf_token %}
+      <div class="file-uploader">
+        <label for="file-input">
+          <span class="upload-icon">&#8681;</span>
+          <span class="upload-text">Drag and drop files or click to select files</span>
+        </label>
+        <input type="file" id="file-input" name="files[]" multiple>
+      </div>
+
+      <div class="file-list">
+        <h2>Uploaded Files</h2>
+        <ul></ul>
+      </div>
+
+      <button type="submit" class="submit-button">Upload</button>
+            </form>
+    </div>
+<script>
+
+    const fileInput = document.getElementById('file-input');
+// Get the file list element
+const fileList = document.querySelector('.file-list ul');
+
+// Add event listener for file input change
+fileInput.addEventListener('change', handleFileSelect);
+
+// Handle file select event
+function handleFileSelect(event) {
+  // Get the selected files
+  const files = event.target.files;
+
+  // Loop through the selected files
+  for (let i = 0; i < files.length; i++) {
+    // Create a list item for the file
+    const listItem = document.createElement('li');
+
+    // Set the file name as the text content of the list item
+    listItem.textContent = files[i].name;
+
+    // Append the list item to the file list
+    fileList.appendChild(listItem);
+  }
+}
+
+// Add event listener for submit button click
+document.querySelector('.submit-button').addEventListener('click', handleSubmit);
+
+
+function handleSubmit() {
+  const files = fileInput.files;
+}
+</script>
+
+{% endblock %}
+
