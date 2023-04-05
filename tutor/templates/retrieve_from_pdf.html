@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block style %}
+    <title>RetrievePdf</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.1/dist/purify.min.js"></script>
+{% endblock %}
+
+{% block content %}
+      <form method="post">
+          {% csrf_token %}
+    <div id="chat-form">
+
+      <input type="text" placeholder="Enter your message" id="message-input" name="message">
+          <button type="submit" id="send-button">Send</button>
+
+        <div class="wrap_loader">
+{#             <div id="loader"> </div>#}
+        </div>
+        </div>
+     </form>
+    <main>
+
+          {% if documents %}
+              {% for doc in documents %}
+                  <h3>Page: {{ doc.metadata.page}} </h3>
+                     <div id="chat-window">
+                    <div id="chat-log">
+                  <p>{{ doc.page_content |linebreaksbr|safe}}</p>
+                   </div>
+      </div>
+              {% endfor %}
+            {% endif %}
+
+    </main>
+
+
+{% endblock %}
