@@ -5,5 +5,6 @@ urlpatterns = [
     path('', views.home, name="home"),
     path('uploadpdf/',views.upload_pdf,name="upload-pdf"),
     path('chat/',views.chat,name="chat"),
-    path('retrieve/',views.retrieve_from_pdf,name="retrieve-from-pdf")
+    path('retrieve/',views.retrieve_from_pdf,name="retrieve-from-pdf"),
+    path('chat_pdf/',views.chat_pdf,name="chat-pdf")
 ]

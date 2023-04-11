@@ -21,18 +21,30 @@
         </div>
      </form>
     <main>
-
+             <form action="{% url 'chat-pdf' %}" method="post">
+             {% csrf_token %}
+             <input type="hidden" name="form_type" value="send data"/>
           {% if documents %}
               {% for doc in documents %}
+
                   <h3>Page: {{ doc.metadata.page}} </h3>
+                  <h4>Source: {{ doc.metadata.source}} </h4>
                      <div id="chat-window">
                     <div id="chat-log">
                   <p>{{ doc.page_content |linebreaksbr|safe}}</p>
+                        <input type="hidden" name="asource" value="{{doc.meta.source}}"/>
+                        <input type="hidden" name="apage" value="{{doc.metadata.page}}"/>
+                        <input type="hidden" name="acontent" value="{{doc.page_content}}"/>
                    </div>
       </div>
+
+                    <br>
               {% endfor %}
             {% endif %}
-
+             <div id="chat-form">
+          <button type="submit" id="send-button2">Chat</button>
+             </div>
+   </form>
     </main>
 
 
