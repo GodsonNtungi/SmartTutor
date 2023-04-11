@@ -13,6 +13,8 @@ from django.core.files.storage import default_storage
 import os
 from langchain.vectorstores import FAISS
 
+from tutor.models import Page
+
 cohere_key = ""
 co = cohere.Client(cohere_key)
 embeddings = CohereEmbeddings(cohere_api_key=cohere_key)
@@ -45,6 +47,17 @@ def prompt(messages, message):
     return prompt_text
 
 
+def prompt_pdf(page, message):
+    prompt_text = "from the following book:"
+    for content in page:
+        prompt_text += f"""\n from page source{content.page_source}
+        \n from page number {content.page_number}
+        \n the content: {content.page_content}"""
+
+    prompt_text += f"\n Answer the following question {message}\n Answer:"
+    return prompt_text
+
+
 def home(request):
     return render(request, "chat.html")
 
@@ -70,16 +83,17 @@ def chat(request):
 def upload_pdf(request):
     if request.method == 'POST' and request.FILES:
         uploaded_files = request.FILES.getlist('files[]')
-
+        ultimate_pages = []
         for file in uploaded_files:
             path = default_storage.save(f'temp/{file.name}', ContentFile(file.read()))
             loader = PyPDFLoader(f'temp/{file.name}')
             pages = loader.load_and_split()
+            ultimate_pages += pages
 
             os.remove(f'temp/{file.name}')
-            print(pages[0])
+            print(pages)
 
-        faiss_index = FAISS.from_documents(pages,embeddings)
+        faiss_index = FAISS.from_documents(ultimate_pages, embeddings)
         faiss_index.save_local("index/")
         return redirect("retrieve-from-pdf")
 
@@ -91,13 +105,36 @@ def retrieve_from_pdf(request):
         message = request.POST.get("message")
         print(message)
         faiss_index = FAISS.load_local('index/', embeddings)
-        docs = faiss_index.similarity_search(message, k=2)
+        docs = faiss_index.similarity_search(message, k=5)
 
         for i in range(len(docs)):
-            docs[i].metadata["page"] =  docs[i].metadata["page"] + 1
+            docs[i].metadata["page"] = docs[i].metadata["page"] + 1
 
         return render(request, 'retrieve_from_pdf.html', context={"documents": docs})
     if request.method == "GET":
         return render(request, 'retrieve_from_pdf.html')
 
     return render(request, 'retrieve_from_pdf.html')
+
+@csrf_exempt
+def chat_pdf(request):
+    if request.method == "POST" and request.POST.get("form_type") == "send data":
+        pages = request.POST.getlist("apage")
+        source = request.POST.getlist("asource")
+        content = request.POST.getlist("acontent")
+        for i in range(len(content)):
+            Page(page_source=source[i], page_number=pages[i], page_content=content[i])
+        return render(request, 'chat_pdf.html')
+    elif request.method == "POST":
+        message = json.loads(request.body)["message"]
+        page = reversed(Page.objects.order_by("-id").values()[:2])
+        response = co.generate(
+            model='command-xlarge-nightly',
+            prompt=prompt_pdf(page, message),
+            max_tokens=400,
+            temperature=0.9,
+            stop_sequences=["\n\nQuestion"])
+
+        answer = response.generations[0].text
+
+        return JsonResponse({"message": answer})
